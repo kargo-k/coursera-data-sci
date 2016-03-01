@@ -9,6 +9,9 @@
 ## the type of outcome to rank the hospital by.  The outcome can be 
 ## "heart attack", "heart failure", or "pneumonia".
 
+## In the event of a tie, the hospital that comes first alphabetically
+## is returned.
+
 best <- function(state, outcome) {
     ## Reads data from outcome-of-care-measures.csv in the working directory
     data <- read.csv("outcome-of-care-measures.csv")
@@ -30,26 +33,30 @@ best <- function(state, outcome) {
     ## death rate for that particular outcome
     
     rows <- which(staterows) # Returns the row indicies of the correct states
-#     cols <- c(2,7,15,21,27)
-#     subdata <- data[rows,cols]
     hospitals <- data$Hospital.Name[rows]
     
     if (targetOutcome == 1) {  ## Subsets data for just heart attacks
-        subdata <- data[rows,11]
+        mortalityRate <- data[rows,11]
     } else if (targetOutcome == 2) {  ## Subsets data for just heart failure
-        subdata <- data[rows,17]
+        mortalityRate <- data[rows,17]
     } else if (targetOutcome == 3) {  ## Subsets data for just pneumonia
-        subdata <- data[rows,23]
+        mortalityRate <- data[rows,23]
     }
     
-    subdata <- as.numeric(as.character(subdata))
-    rmNAdata <- subdata[!is.na(subdata)]
-    hospitals <- hospitals[!is.na(subdata)]
-    minVal <- min(rmNAdata)
-    ## Finds the minimum mortality and its corresponding hospital
-    n <- which(rmNAdata == minVal)
-    hospitals <- hospitals[n]
+    ## Creates a single data.frame "targetData" that contains the mortality
+    ## rates for the outcome and the corresponding hospitals
+    targetData <- data.frame(hospitals,mortalityRate)
+    targetData$mortalityRate <- as.numeric(as.character(targetData$mortalityRate))
     
-    ranked <- order(hospitals)
-    print(as.character(hospitals[ranked[1]]))
+    ## Ignores the hospitals with 'NA' data points
+    targetData <- targetData[!is.na(targetData$mortalityRate),]
+    minVal <- min(targetData$mortalityRate)
+    
+    ## Finds the minimum mortality and its corresponding hospital
+    n <- which(targetData$mortalityRate == minVal)
+    bestHospitals <- targetData[n,]
+    
+    ## Orders the hospitals alphabetically
+    ranked <- order(bestHospitals$hospitals)
+    print(as.character(bestHospitals$hospitals[ranked[1]]))
 }
